@@ -1,0 +1,222 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2022-08-16T20:28:43+05:30",
+    "name": "csgo",
+    "author": "support@pterodactyl.io",
+    "description": "CSGO Egg by skyin",
+    "features": null,
+    "docker_images": {
+        "ghcr.io\/pterodactyl\/games:source": "ghcr.io\/pterodactyl\/games:source"
+    },
+    "file_denylist": [],
+    "startup": ".\/srcds_run -game csgo -console -strictportbind -usercon +ip 0.0.0.0 -port {{SERVER_PORT}} +clientport 27005 +tv_port {{SRCDS_TVPORT}} +sv_setsteamaccount {{STEAM_ACC}} -maxplayers_override {{SRCDS_SLOTS}} -tickrate {{SRCDS_TICRATE}} +map {{SRCDS_MAP}} +mapgroup {{MAPGROUP}} +game_type {{SRCDS_TYPE}} +game_mode {{SRCDS_MODE}} $( [ \"$WS_COLLECTIONID\" != \"\" ] && echo \" +host_workshop_collection $WS_COLLECTIONID\" ) $( [ \"$WS_MAP\" != \"\" ] && echo \" +workshop_start_map $WS_MAP\" ) -authkey {{WS_APIKEY}} -nobreakpad -autoupdate -steam_dir steamcmd -steamcmd_script update.txt $( [ \"$SRCDS_NORESTART\" == \"1\" ] && echo \" -norestart\" ) $( [ \"$SRCDS_NOBOTS\" == \"1\" ] && echo \" -nobots\" ) $( [ \"$SRCDS_NOHLTV\" == \"1\" ] && echo \" -nohltv\" )",
+    "config": {
+        "files": "{\r\n    \"csgo\/cfg\/server.cfg\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"hostname\": \"hostname \\\"{{server.build.env.SRCDS_NAME}}\\\"\",\r\n            \"rcon_password\": \"rcon_password \\\"{{server.build.env.RCON_PASS}}\\\"\",\r\n            \"sv_password\": \"sv_password \\\"{{server.build.env.SERVER_PASS}}\\\"\",\r\n            \"sv_maxrate\": \"sv_maxrate 0\",\r\n            \"sv_minrate\": \"sv_minrate 20480\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": \"Connection to Steam servers successful\",\r\n    \"userInteraction\": []\r\n}",
+        "logs": "{\r\n    \"custom\": true,\r\n    \"location\": \"logs\/latest.log\"\r\n}",
+        "stop": "quit"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# CSGO Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\napt -y update\r\napt -y --no-install-recommends install curl lib32gcc1 ca-certificates\r\napt -y install lib32stdc++6 lib32z1;\r\ncd \/tmp\r\ncurl -sSL -o steamcmd.tar.gz http:\/\/media.steampowered.com\/installer\/steamcmd_linux.tar.gz\r\nmkdir -p \/mnt\/server\/steamcmd\r\ntar -xzvf steamcmd.tar.gz -C \/mnt\/server\/steamcmd\r\ncd \/mnt\/server\/steamcmd\r\n## create autoupdate file\r\ncat >> update.txt << EOF\r\n@ShutdownOnFailedCommand 0 \/\/set to 0 if updating multiple servers at once\r\n@NoPromptForPassword 1\r\nlogin anonymous\r\nforce_install_dir ..\/\r\napp_update ${SRCDS_APPID}\r\nquit\r\nEOF\r\n# SteamCMD fails otherwise for some reason, even running as root.\r\n# This is changed at the end of the install process anyways.\r\nchown -R root:root \/mnt\r\nexport HOME=\/mnt\/server\r\n.\/steamcmd.sh +login anonymous +force_install_dir \/mnt\/server +app_update 740 +quit\r\nmkdir -p \/mnt\/server\/.steam\/sdk32\r\ncp -v linux32\/steamclient.so ..\/.steam\/sdk32\/steamclient.so\r\n## create server.cfg file\r\ncd \/mnt\/server\/csgo\/cfg\r\ncurl -LO https:\/\/raw.githubusercontent.com\/GameServerManagers\/Game-Server-Configs\/master\/CounterStrikeGlobalOffensive\/server.cfg\r\ncat >> server.cfg << EOF\r\n\/\/ 128 tick\r\nsv_maxrate \"0\"\r\nsv_minrate \"196608\"\r\nsm_cvar sv_maxcmdrate \"128\"\r\nsv_mincmdrate \"128\"\r\nsv_minupdaterate \"128\"\r\nsm_cvar sv_maxupdaterate \"128\"\r\nEOF",
+            "container": "ubuntu:18.04",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Map",
+            "description": "The default map for the server.",
+            "env_variable": "SRCDS_MAP",
+            "default_value": "de_dust2",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|alpha_dash",
+            "field_type": "text"
+        },
+        {
+            "name": "Steam Account Token",
+            "description": "The Steam Account Token required for the server to be displayed publicly.\r\nhttps:\/\/steamcommunity.com\/dev\/managegameservers",
+            "env_variable": "STEAM_ACC",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|alpha_num|size:32",
+            "field_type": "text"
+        },
+        {
+            "name": "Source AppID",
+            "description": "Required for game to update on server restart. Do not modify this.",
+            "env_variable": "SRCDS_APPID",
+            "default_value": "740",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Map Group",
+            "description": "Set server map group: mg_active for competetive",
+            "env_variable": "MAPGROUP",
+            "default_value": "mg_active",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Config",
+            "description": "default server config",
+            "env_variable": "SERVERCFGFILE",
+            "default_value": "server.cfg",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Workshop API Key",
+            "description": "https:\/\/steamcommunity.com\/dev\/apikey",
+            "env_variable": "WS_APIKEY",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:32",
+            "field_type": "text"
+        },
+        {
+            "name": "Workshop Collection ID",
+            "description": "set collection",
+            "env_variable": "WS_COLLECTIONID",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Workshop Start Map",
+            "description": "set workshop map",
+            "env_variable": "WS_MAP",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Name",
+            "description": "",
+            "env_variable": "SRCDS_NAME",
+            "default_value": "CSGO Server",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "Ticrate",
+            "description": "set server ticrate to 64 or 128",
+            "env_variable": "SRCDS_TICRATE",
+            "default_value": "128",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer|in:64,128",
+            "field_type": "text"
+        },
+        {
+            "name": "Player Slots",
+            "description": "Number of player slots",
+            "env_variable": "SRCDS_SLOTS",
+            "default_value": "10",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer|between:1,64",
+            "field_type": "text"
+        },
+        {
+            "name": "Game Type",
+            "description": "Game Type: 0 = Classic, 1 = Gun Game, 2 = Training, 3 = Custom, 4 = Cooperative, 5 = Skirmish, 6 = Free For All",
+            "env_variable": "SRCDS_TYPE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|between:0,6",
+            "field_type": "text"
+        },
+        {
+            "name": "Game Mode",
+            "description": "Game Mode: 0= Casual, 1 = Competitive, 2 = Wingman, 3 = Weapon Expert",
+            "env_variable": "SRCDS_MODE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|between:0,3",
+            "field_type": "text"
+        },
+        {
+            "name": "GOTV Port",
+            "description": "Set GOTV port for server",
+            "env_variable": "SRCDS_TVPORT",
+            "default_value": "27020",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Rcon Password",
+            "description": "Server rcon password",
+            "env_variable": "RCON_PASS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Password",
+            "description": "Server password to lock the server",
+            "env_variable": "SERVER_PASS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "No Restart",
+            "description": "If true server will not attempt to restart on fail",
+            "env_variable": "SRCDS_NORESTART",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "nullable|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "No Bots",
+            "description": "If true bots will not join server",
+            "env_variable": "SRCDS_NOBOTS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "nullable|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "No GOTV",
+            "description": "If true server will not have gotv feature",
+            "env_variable": "SRCDS_NOHLTV",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "nullable|boolean",
+            "field_type": "text"
+        }
+    ]
+}
