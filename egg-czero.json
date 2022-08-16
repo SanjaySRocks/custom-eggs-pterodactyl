@@ -1,0 +1,102 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2022-08-16T20:34:48+05:30",
+    "name": "czero",
+    "author": "support@amsgaming.in",
+    "description": "Counter-Strike 1.6 by skyin",
+    "features": null,
+    "docker_images": {
+        "ghcr.io\/pterodactyl\/games:source": "ghcr.io\/pterodactyl\/games:source"
+    },
+    "file_denylist": [],
+    "startup": ".\/hlds_run -console -game czero -port {{SERVER_PORT}} +map {{HLDS_MAP}} +ip 0.0.0.0 -strictportbind -norestart +maxplayers {{HLDS_SLOT}} +sys_ticrate {{HLDS_TICRATE}} -pingboost {{HLDS_PINGBOOST}}",
+    "config": {
+        "files": "{\r\n    \"cstrike\/server.cfg\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"hostname\": \"hostname \\\"{{server.build.env.HLDS_NAME}}\\\"\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": \"Connection to Steam servers successful\",\r\n    \"userInteraction\": []\r\n}",
+        "logs": "{\r\n    \"custom\": true,\r\n    \"location\": \"logs\/latest.log\"\r\n}",
+        "stop": "quit"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# SRCDS Base Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\napt -y update;\r\ndpkg --add-architecture i386;\r\napt -y update;\r\napt -y install lib32gcc-s1;\r\napt -y install lib32stdc++6;\r\n# Install After\r\napt -y --no-install-recommends install curl ca-certificates\r\ncd \/tmp\r\ncurl -sSL -o steamcmd.tar.gz http:\/\/media.steampowered.com\/installer\/steamcmd_linux.tar.gz\r\nmkdir -p \/mnt\/server\/steamcmd\r\ntar -xzvf steamcmd.tar.gz -C \/mnt\/server\/steamcmd\r\ncd \/mnt\/server\/steamcmd\r\n# SteamCMD fails otherwise for some reason, even running as root.\r\n# This is changed at the end of the install process anyways.\r\nchown -R root:root \/mnt\r\nexport HOME=\/mnt\/server\r\n.\/steamcmd.sh +login anonymous +force_install_dir \/mnt\/server +app_update ${HLDS_APPID} +app_set_config \u201c90 mod ${HLDS_GAME} +quit\r\n.\/steamcmd.sh +login anonymous +force_install_dir \/mnt\/server +app_update ${HLDS_APPID} +app_set_config \u201c90 mod ${HLDS_GAME} +quit\r\n## set up 32 bit libraries\r\nmkdir -p \/mnt\/server\/.steam\/sdk32\r\ncp -v linux32\/steamclient.so ..\/.steam\/sdk32\/steamclient.so\r\n## set up 64 bit libraries\r\nmkdir -p \/mnt\/server\/.steam\/sdk64\r\ncp -v linux64\/steamclient.so ..\/.steam\/sdk64\/steamclient.so",
+            "container": "ghcr.io\/pterodactyl\/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Game Name",
+            "description": "Game Name cstrike",
+            "env_variable": "HLDS_GAME",
+            "default_value": "cstrike",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "required|alpha_dash|between:1,100",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Name",
+            "description": "set server name",
+            "env_variable": "HLDS_NAME",
+            "default_value": "Counter-Strike 1.6 Server",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:100",
+            "field_type": "text"
+        },
+        {
+            "name": "Game ID",
+            "description": "Game ID 90",
+            "env_variable": "HLDS_APPID",
+            "default_value": "90",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "required|numeric|digits_between:1,6",
+            "field_type": "text"
+        },
+        {
+            "name": "Map",
+            "description": "The default map for the server.",
+            "env_variable": "HLDS_MAP",
+            "default_value": "de_dust2",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|alpha_dash",
+            "field_type": "text"
+        },
+        {
+            "name": "Player Slot",
+            "description": "Max players allowed",
+            "env_variable": "HLDS_SLOT",
+            "default_value": "10",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer|between:1,32",
+            "field_type": "text"
+        },
+        {
+            "name": "Sys Ticrate",
+            "description": "set server ticrate",
+            "env_variable": "HLDS_TICRATE",
+            "default_value": "1000",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Pingboost",
+            "description": "set server pingboost",
+            "env_variable": "HLDS_PINGBOOST",
+            "default_value": "2",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer|in:1,2,3",
+            "field_type": "text"
+        }
+    ]
+}
